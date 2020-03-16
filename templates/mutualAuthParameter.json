@@ -1,0 +1,30 @@
+{
+	"$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+	"contentVersion": "1.0.0.0",
+	"parameters": {
+		"addressPrefix": {
+			"value": "10.0.0.0/16"
+		},
+		"subnetPrefix": {
+			"value": "10.0.0.0/24"
+		},
+		"skuName": {
+			"value": "Standard_v2"
+		},
+		"backendIpAddress1": {
+			"value": ""
+		},
+		"backendIpAddress2": {
+			"value": ""
+		},
+		"certData": {
+			"value": "Base64 certificate data"
+		},
+		"certPassword": {
+			"value": ""
+		},
+		"clientCertData": {
+			"value": "MIIDQDCCAiigAwIBAgIQbF4x1pzGSXqYuKSaoIZo6TANBgkqhkiG9w0BAQsFADAdMRswGQYDVQQDExJzaGlwcGluZ3BvcnRhbC5jb20wHhcNMjAwMzEyMTMzNTUwWhcNMjEwMzEyMTM0NTUwWjAdMRswGQYDVQQDExJzaGlwcGluZ3BvcnRhbC5jb20wggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQDQZimRz9AsYOzhZSnMyvEiLlBtsAGAb2metVY9U6hAMcad2n9idAUY9Mv2FeUK79wrjcPcpLOZWjEjxbcHL+9iVJmtv3EoKSXZbukAYKW+MiOL6hg2nfCIVvhoGW2fbEXXrVJJl3M6IrQS2buNYIDc04lu2nbjmSQODwqUEf81oyTGHZG3Phy3l3ka0M4wAsb3RdnPnkcYOTnZjIh46KpqT4q+iek7jYOKTUdkLkX/hbSFgXsWjB9azGLAr2MxxKc0SwJ397R6ydMhjMu2HOe2N1eDC73Dk15BjDZfxFBs0UFESpj7X4dvE03qj4NLVUUZco2i7CHeErE/zPrjPmhpAgMBAAGjfDB6MA4GA1UdDwEB/wQEAwIFoDAJBgNVHRMEAjAAMB0GA1UdJQQWMBQGCCsGAQUFBwMBBggrBgEFBQcDAjAfBgNVHSMEGDAWgBSUMPCNGDL7SeTQ2MYBLGCy4yj+mjAdBgNVHQ4EFgQUlDDwjRgy+0nk0NjGASxgsuMo/powDQYJKoZIhvcNAQELBQADggEBAD9tbxnQozBAtEzYvBcQ6PBpjfwOAkDcf/l9/G3rW++whj712qzH6N7Maa4ZX4vPVvGY5NrpDJ4PNlXzBHcXc/qTf4n+Ux1txwHZ/SQX5JY+TQ+SBIFFh4HKKXVTnpHk+LHJmDXzwXRDUYR0rC0xTMfaCkEEOUQcffgd5UxL6qWyhE5jdNr8OfJuQIDaxU/Oh2Unb+deYuH1kdK/FFTAiIUc22W+NKdats/VkVcEPMbndXy0PQ+vJLIJmR9WDhLuNno66OqnNpdG7CvuwfyuCP2E+KVyB/sWtyC8XvxaoQDwSJRoS5IRmH0srcrknHhluHkzFEHySp/2g5fxCFSguoo="
+		}
+	}
+}

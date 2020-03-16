@@ -29,3 +29,154 @@ Privacy information can be found at https://privacy.microsoft.com/en-us/
 
 Microsoft and any contributors reserve all other rights, whether under their respective copyrights, patents,
 or trademarks, whether by implication, estoppel or otherwise.
+
+## Setup in Azure 
+
+```
+az account set --subscription <your subscription>
+
+export rgName=io-d-rg-testca
+export location=westeurope
+
+az group create --name $rgName --location $location
+
+bash setup-infra.sh
+
+echo https://"$(az vm show \
+  --name webservervm1 \
+  --resource-group $rgName \
+  --show-details \
+  --query [publicIps] \
+  --output tsv)"
+```
+
+### Configure the backend pool for encryption
+
+```
+$ privateip="$(az vm list-ip-addresses \
+  --resource-group $rgName \
+  --name webservervm1 \
+  --query "[0].virtualMachine.network.privateIpAddresses[0]" \
+  --output tsv)"
+
+$ echo $privateip 
+
+$ export appGatewayName=gw-shipping 
+
+$ az network application-gateway address-pool create   \
+  --resource-group $rgName   \
+  --gateway-name gw-shipping   \
+  --name ap-backend
+
+$ az network application-gateway address-pool create \   --resource-group $rgName \
+--gateway-name $appGatewayName \
+--name ap-backend \
+--servers $privateip
+
+$ az network application-gateway root-cert create   \
+--resource-group $rgName    \
+--gateway-name $appGatewayName   \
+--name shipping-root-cert   \
+--cert-file server-config/shipping-ssl.crt
+
+$ az network application-gateway http-settings create \
+--resource-group $rgName   \
+--gateway-name $appGatewayName   \
+--name https-settings   \
+--port 443   \
+--protocol Https   \
+--host-name $privateip
+
+$ export rgID="$(az group show --name $rgName --query id --output tsv)"
+
+$ az network application-gateway http-settings update     --resource-group $rgName     \
+--gateway-name $appGatewayName     \
+--name https-settings     \
+--set trustedRootCertificates='[{"id": "'$rgID'/providers/Microsoft.Network/applicationGateways/'$appGatewayName'/trustedRootCertificates/shipping-root-cert"}]'
+
+$ az network application-gateway frontend-port create \
+--resource-group $rgName   \
+--gateway-name $appGatewayName   \
+--name https-port   \
+--port 443
+
+$ export certPassword=somepassword
+
+$ az network application-gateway ssl-cert create    \
+--resource-group $rgName    \
+--gateway-name $appGatewayName \
+--name appgateway-cert    \
+--cert-file server-config/appgateway.pfx    \
+--cert-password $certPassword
+
+$ az network application-gateway http-listener create \
+--resource-group $rgName   \
+--gateway-name $appGatewayName   \
+--name https-listener   \
+--frontend-port https-port   \
+--ssl-cert appgateway-cert
+
+$ az network application-gateway rule create     \
+--resource-group $rgName     \
+--gateway-name $appGatewayName     \
+--name https-rule     \
+--address-pool ap-backend     \
+--http-listener https-listener     \
+--http-settings https-settings     \
+--rule-type Basic
+
+$ echo https://$(az network public-ip show \
+  --resource-group $rgName \
+  --name appgwipaddr \
+  --query ipAddress \
+  --output tsv)
+ 
+
+## Deploy Application Gateway with a template
+
+### Generate certificate 
+
+With Power Shell
+```
+$pfx_cert = get-content './appgateway.pfx' -AsByteStream
+[System.Convert]::ToBase64String($pfx_cert) | Out-File ‘appgateway-pfx-encoded-bytes.txt’
+
+```
+
+bash 
+```
+$ export certData=$(cat server-config/appgateway-pfx-encoded-bytes.txt)
+```
+
+### Root CA certificate
+
+```
+$ openssl req -x509 -new -nodes -key appgateway-privatekey.key -sha256 -days 1825 -out appgateway.pem
+```
+
+Encode the pem file in a base64 string with this online tool 
+https://www.browserling.com/tools/file-to-base64
+and save it to the file appgateway-pem-encoded-bytes.txt
+
+
+
+$ export clientCertData=$(cat server-config/appgateway-pem-encoded-bytes.txt)
+```
+
+$ az group deployment validate \
+  --resource-group $rgName \
+  --template-file templates/appgateway.json \
+  --parameters certPassword=$certPassword \
+  --parameters certData=$certData \
+  --parameters clientCertData=$clientCertData
+ ```
+
+```
+$ az group deployment create \
+  --name UpdateAppGateWay \
+  --resource-group $rgName \
+  --template-file templates/appgateway.json \
+  --parameters certPassword=$certPassword \
+  --parameters certData=$certData \
+  --parameters clientCertData=$clientCertData
+```

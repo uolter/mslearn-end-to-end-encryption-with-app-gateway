@@ -1,0 +1,255 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "applicationGateways_gw_shipping_name": {
+      "defaultValue": "gw-shipping",
+      "type": "String"
+    },
+    "virtualNetworks_shippingportalvnet_externalid": {
+      "defaultValue": "/subscriptions/a4e96bcd-59dc-4d66-b2f7-5547ad157c12/resourceGroups/io-d-rg-testca/providers/Microsoft.Network/virtualNetworks/shippingportalvnet",
+      "type": "String"
+    },
+    "publicIPAddresses_appgwipaddr_externalid": {
+      "defaultValue": "/subscriptions/a4e96bcd-59dc-4d66-b2f7-5547ad157c12/resourceGroups/io-d-rg-testca/providers/Microsoft.Network/publicIPAddresses/appgwipaddr",
+      "type": "String"
+    },
+    "certData": {
+      "type": "string",
+      "metadata": {
+        "description": "ssl cert"
+      }
+    },
+    "certPassword": {
+      "type": "string",
+      "metadata": {
+        "description": "ssl cert password"
+      }
+    },
+		"clientCertData": {
+			"type": "string",
+			"metadata": {
+				"description": "client cert data"
+			}
+		}
+  },
+  "variables": {
+    "applicationGatewayName": "[parameters('applicationGateways_gw_shipping_name')]",
+    "applicationGatewayID": "[resourceId('Microsoft.Network/applicationGateways',variables('applicationGatewayName'))]",
+		"apiVersion": "2019-09-01"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Network/applicationGateways",
+      "apiVersion": "2019-11-01",
+      "name": "[parameters('applicationGateways_gw_shipping_name')]",
+      "location": "westeurope",
+      "properties": {
+        "sku": {
+          "name": "Standard_v2",
+          "tier": "Standard_v2",
+          "capacity": 2
+        },
+        "gatewayIPConfigurations": [
+          {
+            "name": "appGatewayFrontendIP",
+            "properties": {
+              "subnet": {
+                "id": "[concat(parameters('virtualNetworks_shippingportalvnet_externalid'), '/subnets/appgatewaysubnet')]"
+              }
+            }
+          }
+        ],
+        "sslCertificates": [
+          {
+            "name": "appgateway-cert",
+            "properties": {
+              "data": "[parameters('certData')]",
+              "password": "[parameters('certPassword')]"
+            }
+          }
+        ],
+        "trustedClientCertificates": [{
+          "name": "clientCert",
+          "properties": {
+            "data": "[parameters('clientCertData')]"
+          }
+        }],
+        "sslProfiles": [{
+          "name": "sslProfile1",
+          "properties": {
+            "trustedClientCertificates": [{
+              "Id": "[concat(variables('applicationGatewayID'), '/trustedClientCertificates/clientCert')]"
+            }],
+            "clientAuthConfiguration": {
+              "verifyClientCertIssuerDN": false
+            },
+            "sslPolicy": {
+              "policyType": "Predefined",
+              "policyName": "AppGwSslPolicy20170401"
+            }
+          }
+        }],
+        "trustedRootCertificates": [
+          {
+            "name": "shipping-root-cert",
+            "properties": {
+              "data": "LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSURSekNDQWkrZ0F3SUJBZ0lVTHpIMVpWQmtIMmdnL0kvQS84TWVjSTlHSDg4d0RRWUpLb1pJaHZjTkFRRUwKQlFBd016RVJNQThHQTFVRUNnd0lVbVYwWVdsc1EyOHhDekFKQmdOVkJBWVRBbFZUTVJFd0R3WURWUVFEREFneApNQzR3TGpFdU5EQWVGdzB5TURBek1UVXdPVE01TURkYUZ3MHlNVEF6TVRVd09UTTVNRGRhTURNeEVUQVBCZ05WCkJBb01DRkpsZEdGcGJFTnZNUXN3Q1FZRFZRUUdFd0pWVXpFUk1BOEdBMVVFQXd3SU1UQXVNQzR4TGpRd2dnRWkKTUEwR0NTcUdTSWIzRFFFQkFRVUFBNElCRHdBd2dnRUtBb0lCQVFESlZHOUl2dkp4SWJTRm9kRzB6SGR1c205cApkSmN0Ykt1N3lVU2lIQUcvRWhIZGtEY2Qxb2VCOFM4QTVwb3hTN3NEa1FFTWIweXF0bVhMTXhtdG1yUU9ZcEhWCldDcTNON0JNdU9LNzhIYjUyUm1SMlBBZFhWTFhLRlFZaEVXaXY2ZUJhZGZpVzkyN1UwK2dtWGprMzFVUzExS3YKQzZWOWxrMGh3ZUx0WGFzWTdDL0dTSHZGVDEySHN5dFdUdUhLc2NhUldWdXJ1M04wSCt6NjJBSGlON2FNaEZQdwpKV1Z5UmZSRjdib2VWVmgzaXdqbW9BY3ZZMmRrbWpXTkJ6RXJTcjRZbzdxOG5yMTQ0OFo5aDRUZElVbUNENmh6Cm84bk1Ub3ZYQnByK1JBRFNhTUpEbzRrODNEdlEyN3ZKa0I5cUJQSXF0eUtLMU9JZ2N1c2ZqMXRYM2ZtaEFnTUIKQUFHalV6QlJNQjBHQTFVZERnUVdCQlNaVmR6ZGNEQzFCT1c5MkhwQ2o2emhFVE9vRHpBZkJnTlZIU01FR0RBVwpnQlNaVmR6ZGNEQzFCT1c5MkhwQ2o2emhFVE9vRHpBUEJnTlZIUk1CQWY4RUJUQURBUUgvTUEwR0NTcUdTSWIzCkRRRUJDd1VBQTRJQkFRQzNNY082QXkxdjFSN0ZHOEEvZG56QlZMbUpiQ09RRWZIVEd4YmpDTmVxMThWbUhhZUEKUkpyN1BWQ0xGVmRtdmFYeE5ScGN5aHJsSC95SEJCUzNQank3L0xlUDdFRDB1V0xFTnJLN1hkYVJFY3NhRVREMwp6OU84M05FTURIYWRWWE93NXFZbTNSUVZNeW9aUmZ4QzJWOU8ydTVvZ3A0SEtnT2FoeGhobjNUK1lkblYzQ1FjCm1LMHhuRjBlaDdhMjBuNDJjQ3VzaWJWSzgwMWpqMVZ2MHBFcWlMT1ByUUdrRVlJK2dwOFdpRU9pNjlYU2MxcWkKQXVNNnFjRGljKy8vL1hTK2ZocVpncTQyemdPY2haN0dZc2tYalAwY1BKcDhFSk1ib1lIVmE2NXJhd3ZPMC90dwpGNGd4dzlrRTkwUnd3TUxoMmthZlFWbjluN0lpUXI2MFdBSmEKLS0tLS1FTkQgQ0VSVElGSUNBVEUtLS0tLQo="
+            }
+          }
+        ],
+        "frontendIPConfigurations": [
+          {
+            "name": "appGatewayFrontendIP",
+            "properties": {
+              "privateIPAllocationMethod": "Dynamic",
+              "publicIPAddress": {
+                "id": "[parameters('publicIPAddresses_appgwipaddr_externalid')]"
+              }
+            }
+          }
+        ],
+        "frontendPorts": [
+          {
+            "name": "appGatewayFrontendPort",
+            "properties": {
+              "port": 80
+            }
+          },
+          {
+            "name": "https-port",
+            "properties": {
+              "port": 443
+            }
+          }
+        ],
+        "backendAddressPools": [
+          {
+            "name": "appGatewayBackendPool",
+            "properties": {
+              "backendAddresses": []
+            }
+          },
+          {
+            "name": "ap-backend",
+            "properties": {
+              "backendAddresses": [
+                {
+                  "ipAddress": "10.0.1.4"
+                }
+              ]
+            }
+          }
+        ],
+        "backendHttpSettingsCollection": [
+          {
+            "name": "appGatewayBackendHttpSettings",
+            "properties": {
+              "port": 80,
+              "protocol": "Http",
+              "cookieBasedAffinity": "Disabled",
+              "connectionDraining": {
+                "enabled": false,
+                "drainTimeoutInSec": 1
+              },
+              "pickHostNameFromBackendAddress": false,
+              "requestTimeout": 30
+            }
+          },
+          {
+            "name": "https-settings",
+            "properties": {
+              "port": 443,
+              "protocol": "Https",
+              "cookieBasedAffinity": "Disabled",
+              "connectionDraining": {
+                "enabled": false,
+                "drainTimeoutInSec": 1
+              },
+              "hostName": "10.0.1.4",
+              "pickHostNameFromBackendAddress": false,
+              "requestTimeout": 30,
+              "trustedRootCertificates": [
+                {
+                  "id": "[concat(resourceId('Microsoft.Network/applicationGateways', parameters('applicationGateways_gw_shipping_name')), '/trustedRootCertificates/shipping-root-cert')]"
+                }
+              ]
+            }
+          }
+        ],
+        "httpListeners": [
+          {
+            "name": "appGatewayHttpListener",
+            "properties": {
+              "frontendIPConfiguration": {
+                "id": "[concat(resourceId('Microsoft.Network/applicationGateways', parameters('applicationGateways_gw_shipping_name')), '/frontendIPConfigurations/appGatewayFrontendIP')]"
+              },
+              "frontendPort": {
+                "id": "[concat(resourceId('Microsoft.Network/applicationGateways', parameters('applicationGateways_gw_shipping_name')), '/frontendPorts/appGatewayFrontendPort')]"
+              },
+              "protocol": "Http",
+              "hostNames": [],
+              "requireServerNameIndication": false
+            }
+          },
+          {
+            "name": "https-listener",
+            "properties": {
+              "frontendIPConfiguration": {
+                "id": "[concat(resourceId('Microsoft.Network/applicationGateways', parameters('applicationGateways_gw_shipping_name')), '/frontendIPConfigurations/appGatewayFrontendIP')]"
+              },
+              "frontendPort": {
+                "id": "[concat(resourceId('Microsoft.Network/applicationGateways', parameters('applicationGateways_gw_shipping_name')), '/frontendPorts/https-port')]"
+              },
+              "protocol": "Https",
+              "sslCertificate": {
+                "id": "[concat(resourceId('Microsoft.Network/applicationGateways', parameters('applicationGateways_gw_shipping_name')), '/sslCertificates/appgateway-cert')]"
+              },
+              "hostNames": [],
+              "requireServerNameIndication": false,
+              "SslProfile": {
+                "Id": "[concat(variables('applicationGatewayID'), '/sslProfiles/sslProfile1')]"
+              }
+            }
+          }
+        ],
+        "urlPathMaps": [],
+        "requestRoutingRules": [
+          {
+            "name": "rule1",
+            "properties": {
+              "ruleType": "Basic",
+              "httpListener": {
+                "id": "[concat(resourceId('Microsoft.Network/applicationGateways', parameters('applicationGateways_gw_shipping_name')), '/httpListeners/appGatewayHttpListener')]"
+              },
+              "backendAddressPool": {
+                "id": "[concat(resourceId('Microsoft.Network/applicationGateways', parameters('applicationGateways_gw_shipping_name')), '/backendAddressPools/appGatewayBackendPool')]"
+              },
+              "backendHttpSettings": {
+                "id": "[concat(resourceId('Microsoft.Network/applicationGateways', parameters('applicationGateways_gw_shipping_name')), '/backendHttpSettingsCollection/appGatewayBackendHttpSettings')]"
+              }
+            }
+          },
+          {
+            "name": "https-rule",
+            "properties": {
+              "ruleType": "Basic",
+              "httpListener": {
+                "id": "[concat(resourceId('Microsoft.Network/applicationGateways', parameters('applicationGateways_gw_shipping_name')), '/httpListeners/https-listener')]"
+              },
+              "backendAddressPool": {
+                "id": "[concat(resourceId('Microsoft.Network/applicationGateways', parameters('applicationGateways_gw_shipping_name')), '/backendAddressPools/ap-backend')]"
+              },
+              "backendHttpSettings": {
+                "id": "[concat(resourceId('Microsoft.Network/applicationGateways', parameters('applicationGateways_gw_shipping_name')), '/backendHttpSettingsCollection/https-settings')]"
+              }
+            }
+          }
+        ],
+        "probes": [],
+        "rewriteRuleSets": [],
+        "redirectConfigurations": []
+      }
+    }
+  ]
+}
